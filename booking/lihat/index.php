@@ -1,3 +1,9 @@
+<?php
+//  session_start();
+//  if(!isset($_SESSION["userlogin"])){
+//    header("Location: ../../");
+//  }
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -39,23 +45,44 @@
       </div>
       <div class="row">
         <div class="three columns">
+          <form method="post">
           <label for="sortInput">Urut berdasarkan: </label>
-          <select class="u-full-width" id="sortInput">
-            <option value="Option 1">Invoice</option>
-            <option value="Option 2">Tanggal Datang</option>
-            <option value="Option 3">Tanggal Pergi</option>
+          <select class="u-full-width" name="sortInput">
+            <option value="Invoice">Invoice</option>
+            <option value="Tanggal Datang">Tanggal Datang</option>
+            <option value="Tanggal Pergi">Tanggal Pergi</option>
           </select>
+          <select class="u-full-width" name="sortiran">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+          <input type="submit" name="submit" value="Urutkan" />
+          </form>
+          <?php 
+            $selected_val="";
+            $selected_urut="";
+            if(isset($_POST['submit'])){
+              $selected_val = $_POST['sortInput'];  // Storing Selected Value In Variable
+              $selected_urut = $_POST['sortiran'];
+            }  
+          ?>
         </div>
         <div class="four columns">
           <br></br>
         </div>
         <div class = "three columns">
     			<div class="caritanggal">
-      				<input type="date" class="u-full-width" id="date" placeholder="Enter date" style="height:38px; padding:5px 10px">
+      				<input type="date" method="post" ="u-full-width" id="date" placeholder="Enter date" style="height:38px; padding:5px 10px">
     			</div>
     		</div>
     		<div class = "two columns">
-    			<button type="search" class="button">Search</button>
+    			<input type="search" name="search" class="button" value="Search">
+          <?php 
+            if(isset($_POST['search'])){
+              $selected_date = $_POST['date'];  // Storing Selected Value In Variable
+              echo $selected_date;
+            }  
+          ?>
     		</div>
       </div>
       <div class="row" style="overflow-x: scroll">
@@ -72,38 +99,64 @@
         			</tr>
         		</thead>
         		<tbody>
-          			<tr>
-            			<td>ABC456</td>
-            			<td>5/05/2016 20:14</td>
-    					<td>08/05/2016 10:00</td>
-    					<td>2</td>
-    					<td>0</td>
-    					<td>4,500,000</td>
-    					<td>Anto</td>
-          			</tr>
-          			<tr>
-            			<td>ABC789</td>
-            			<td>05/05/2016 15:44</td>
-    					<td>07/05/2016 10:00</td>
-    					<td>1</td>
-    					<td>0</td>
-    					<td>1,800,000</td>
-    					<td>Budi</td>
-          			</tr>
-          			<tr>
-            			<td>ABC123</td>
-            			<td>05/05/2016 13:24</td>
-    					<td>09/05/2016 09:00</td>
-    					<td>3</td>
-    					<td>0</td>
-    					<td>3,600,000</td>
-    					<td>Chandra</td>
-          			</tr>
+                <?php
+                  $conn = Connectpgdb();
+                  function Connectpgdb()
+                  { 
+
+                    $host        = "host=127.0.0.1";
+                    $port        = "port=5432";
+                    $dbname      = "dbname=Silutel";
+                    $credentials = "user=postgres password=f1k121";
+
+                    $db = pg_connect( "$host $port $dbname $credentials"  );
+                    if(!$db){
+                      echo "Error : Unable to open database";
+                    } else {
+                      $atur = "SET search_path TO Silutel";
+                      pg_query($db,$atur);
+                      return $db;
+                    }
+                  }
+
+                  $urut = "SELECT * FROM invoice ";
+
+                  if($selected_val="Invoice" && $selected_urut=="asc"){
+                    $urut = "SELECT * FROM invoice ORDER BY nomorinvoice ASC";
+                  }
+                  else if($selected_val="Tanggal Datang" && $selected_urut=="asc"){
+                    $urut = "SELECT * FROM invoice ORDER BY tanggaldatang ASC";
+                  }
+                  else if($selected_val="Tanggal Pergi" && $selected_urut=="asc"){
+                    $urut = "SELECT * FROM invoice ORDER BY tanggalpergi ASC";
+                  }
+                  else if($selected_val="Invoice" && $selected_urut=="desc"){
+                    $urut = "SELECT * FROM invoice ORDER BY nomorinvoice DESC";
+                  }
+                  else if($selected_val="Tanggal Datang" && $selected_urut=="desc"){
+                    $urut = "SELECT * FROM invoice ORDER BY tanggaldatang DESC";
+                  }
+                  else if($selected_val="Tanggal Pergi" && $selected_urut=="desc"){
+                    $urut = "SELECT * FROM invoice ORDER BY tanggalpergi DESC";
+                  }
+
+                  $results = pg_query($conn,$urut);
+                  if(pg_num_rows($results)>0){
+                    while($row = pg_fetch_assoc($results)){
+                      $idnya = $row["idtamu"];
+                      $querynama = "SELECT nama FROM tamu WHERE id = '$idnya'";
+                      $namatamu = pg_query($conn,$querynama);
+                      while($row2 = pg_fetch_assoc($namatamu)){
+                        echo "<tr><td>".$row["nomorinvoice"]."</td><td>".$row["tanggaldatang"]."</td><td>".$row["tanggalpergi"]."</td><td>".
+                        $row["jumlah"]."</td><td>".$row["discount"]."</td><td>".$row["total"]."</td><td>".$row2["nama"]."</td></tr>";
+                      }
+                    }
+                  }
+                  pg_close($conn);
+        ?>
         		</tbody>
     		</table>
       </div>
-
     </div>
-
 	</body>
 </html>
